@@ -1,5 +1,5 @@
 import pytest
-from formal.nfa import State, Automaton
+from formal.nfa import State, NFA
 from formal.thompson import make_nfa, regex_to_postfix
 from formal.determinize import determinize, get_epsilon_closure, get_transition
 from formal.minimize import minimize_dfa
@@ -22,12 +22,13 @@ def test_postfix():
     assert regex_to_postfix("a(bc)*") == "abc.*."
 
 def test_make_nfa():
-    nfa_empty = make_nfa("")
-    assert len(nfa_empty.get_states()) == 1
+    nfa1 = make_nfa("")
+    assert len(nfa1.get_states()) == 1
     
-    nfa_single = make_nfa("a")
-    states = nfa_single.get_states()
+    nfa2 = make_nfa("a")
+    states = nfa2.get_states()
     assert len(states) == 2
+    assert "NFA(0" in repr(nfa2)
 
 def test_determinize_minimize():
     nfa = make_nfa("(a+b)*abb")
@@ -66,6 +67,6 @@ def test_closure_transition():
 
 def test_minimize_edge_case():
     s1 = State(1)
-    dfa = Automaton(s1, set())
+    dfa = NFA(s1, set())
     min_dfa = minimize_dfa(dfa)
     assert len(min_dfa.get_states()) == 1

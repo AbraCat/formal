@@ -4,7 +4,7 @@ import graphviz
 from .thompson import make_nfa
 from .determinize import determinize
 from .minimize import minimize_dfa
-from .nfa import Automaton, State
+from .nfa import NFA, State, get_state_cnt, normalize_ids
 
 default_nfa_file = "txt/nfa.txt"
 default_dfa_file = "txt/dfa.txt"
@@ -44,37 +44,6 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-def get_state_cnt_dfs(nfa, state, visited):
-    if state in visited:
-        return 0
-    visited.append(state)
-    
-    cnt = 0
-    for (c, states) in state.transitions.items():
-        for to in states:
-            cnt += get_state_cnt_dfs(nfa, to, visited)
-
-    return cnt + 1
-
-def get_state_cnt(nfa):
-    return get_state_cnt_dfs(nfa, nfa.start, [])
-
-def normalize_ids(nfa):
-    state_cnt = get_state_cnt(nfa)
-    normalize_ids_dfs(nfa, nfa.start, 0, [])
-
-def normalize_ids_dfs(nfa, state, new_cnt, visited):
-    if state in visited:
-        return new_cnt
-    visited.append(state)
-    state.id = new_cnt
-    new_cnt += 1
-
-    for (c, states) in state.transitions.items():
-        for to in states:
-            new_cnt = normalize_ids_dfs(nfa, to, new_cnt, visited)
-    return new_cnt
 
 def write_nfa_dfs(file, state, nfa, visited):
     if state in visited:
@@ -129,10 +98,10 @@ def read_nfa(filename):
                 for to in to_ids:
                     states[id].add_transition(c, states[int(to)])
 
-        return Automaton(states[start_id], final_states)
+        return NFA(states[start_id], final_states)
 
 def draw_nfa(nfa, filename):
-    dot = graphviz.Digraph(comment='Automaton', graph_attr={'rankdir': 'LR'})
+    dot = graphviz.Digraph(comment='NFA', graph_attr={'rankdir': 'LR'})
     states = nfa.get_states()
     dot.node('before_start', shape='point', width='0')
 

@@ -1,5 +1,5 @@
 from typing import List
-from .nfa import State, Automaton
+from .nfa import State, NFA
 
 class Thompson:
     def __init__(self):
@@ -20,12 +20,12 @@ class Thompson:
             fin.add_transition('', nfa.start)
             fin.add_transition('', new_fin)
 
-        return Automaton(start, {new_fin})
+        return NFA(start, {new_fin})
 
     def process_concat(self, nfa1, nfa2):
         for nfa1_fin in nfa1.final:
             nfa1_fin.add_transition('', nfa2.start)
-        return Automaton(nfa1.start, nfa2.final)
+        return NFA(nfa1.start, nfa2.final)
 
     def process_or(self, nfa1, nfa2):
         start = self.create_state()
@@ -39,13 +39,13 @@ class Thompson:
         for fin in nfa2.final:
             fin.add_transition('', new_fin)
             
-        return Automaton(start, {new_fin})
+        return NFA(start, {new_fin})
 
     def process_char(self, c):
         start = self.create_state()
         fin = self.create_state()
         start.add_transition(c, fin)
-        return Automaton(start, {fin})
+        return NFA(start, {fin})
 
 def add_explicit_concat(regex):
     explicit_concat = ""
@@ -91,7 +91,7 @@ def make_nfa(regex):
     t = Thompson()
     if regex == "":
         s = t.create_state()
-        return Automaton(s, {s})
+        return NFA(s, {s})
 
     postfix = regex_to_postfix(regex)
     stack = []

@@ -1,5 +1,5 @@
 from typing import Set, Dict, FrozenSet, List
-from .nfa import State, Automaton
+from .nfa import State, NFA, get_alphabet
 
 def complete_dfa(dfa, alphabet):
     states = dfa.get_states()
@@ -17,79 +17,53 @@ def complete_dfa(dfa, alphabet):
         trap.add_transition(c, trap)
     for state in states:
         for c in alphabet:
-            if c not in state.transitions or not state.transitions[c]:
+            if c not in state.transitions:
                 state.add_transition(c, trap)
     return dfa
 
-
-def get_alphabet(states):
-    alphabet = set()
-    for s in states:
-        for c in s.transitions:
-            alphabet.add(c)
-    return alphabet
-
-def get_to_set(clas, states, c):
-    part = set()
+def get_to_set(to_list, states, c):
+    fro = set()
     for state in states:
         if c not in state.transitions:
             continue
         to = list(state.transitions[c])[0]
-        if to in clas:
-            part.add(state)
-    return part
+        if to in to_list:
+            fro.add(state)
+    return fro
 
-def partition_classes(classes, part, queue):
+def partition_classes(classes, splitter, queue):
     new_classes = []
+
     for clas in classes:
-        inside = clas & part
-        outside = clas - part
-        
-        if inside and outside:
-            new_classes.append(inside)
-            new_classes.append(outside)
-            
-            if clas in queue:
-                queue.remove(clas)
-                queue.append(inside)
-                queue.append(outside)
-            else:
-                queue.append(inside if len(inside) <= len(outside) else outside)
-        else:
-            new_classes.append(clas)
+        inside = clas & splitter
+        outside = clas - splitter
+        new_classes += [s for s in [inside, outside] if s]
+        if not inside or not outside:
+            continue
+
+        if clas in queue:
+            queue.remove(clas)
+        queue += [inside, outside]
 
     return new_classes
 
 def get_partition(dfa, alphabet):
     states = dfa.get_states()
-    final = dfa.final
-    non_final = states - final
-
-    classes = []
-    queue = []
-    if final:
-        classes.append(frozenset(final))
-        queue.append(frozenset(final))
-    if non_final:
-        classes.append(frozenset(non_final))
-        queue.append(frozenset(non_final))
+    classes = [frozenset(s) for s in [dfa.final, states - dfa.final] if s]
+    queue = classes.copy()
         
     while queue != []:
-        queue_clas = queue.pop(0)
+        to = queue.pop(0)
         for c in alphabet:
-            part = get_to_set(queue_clas, states, c)
-            if part == set():
+            splitter = get_to_set(to, states, c)
+            if splitter == set():
                 continue  
 
-            part = frozenset(part)
-            classes = partition_classes(classes, part, queue)
-
+            classes = partition_classes(classes, frozenset(splitter), queue)
     return classes
 
 def partition_to_dfa(dfa, classes):
-    state_cnt = 0
-    clas_to_new = {}
-    old_to_clas = {}
+    state_cnt, clas_to_new, old_to_clas = 0, {}, {}
     
     for clas in classes:
         new_state = State(state_cnt)
@@ -104,13 +78,12 @@ def partition_to_dfa(dfa, classes):
         for c, to in old_state.transitions.items():
             new_state.add_transition(c, clas_to_new[old_to_clas[list(to)[0]]])
             
-    new_start = clas_to_new[old_to_clas[dfa.start]]
-    new_final = set()
+    new_start, new_final = clas_to_new[old_to_clas[dfa.start]], set()
     for clas in classes:
         if any(s in dfa.final for s in clas):
             new_final.add(clas_to_new[clas])
 
-    return Automaton(new_start, new_final)
+    return NFA(new_start, new_final)
 
 def minimize_dfa(dfa):
     alphabet = get_alphabet(dfa.get_states())

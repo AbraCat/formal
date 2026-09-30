@@ -1,5 +1,5 @@
 from typing import Set, Dict, FrozenSet, List
-from .nfa import State, Automaton
+from .nfa import State, NFA, get_alphabet
 
 def get_epsilon_closure(states):
     closure = set(states)
@@ -24,15 +24,6 @@ def get_transition(states, c):
             move.update(state.transitions[c])
     return move
 
-def get_alphabet(nfa):
-    alphabet = set()
-    states = nfa.get_states()
-    for state in states:
-        for c in state.transitions:
-            if c != '':
-                alphabet.add(c)
-    return alphabet
-
 def get_dfa_final(nfa, state_map):
     dfa_final = set()
     for nfa_state, dfa_state in state_map.items():
@@ -46,7 +37,7 @@ def get_dfa_state(nfa_state, state_map, cnt):
     return state_map[nfa_state], cnt + 1
 
 def determinize(nfa):
-    alphabet = get_alphabet(nfa)
+    alphabet = get_alphabet(nfa.get_states())
     nfa_start_closure = get_epsilon_closure({nfa.start})
     cnt = 0
     state_map = {}
@@ -70,4 +61,4 @@ def determinize(nfa):
             next_dfa, cnt = get_dfa_state(trans_closure, state_map, cnt)
             cur_dfa.add_transition(c, next_dfa)
                     
-    return Automaton(dfa_start, get_dfa_final(nfa, state_map))
+    return NFA(dfa_start, get_dfa_final(nfa, state_map))

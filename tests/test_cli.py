@@ -5,8 +5,8 @@ from unittest.mock import MagicMock, patch
 import formal
 import formal.cli
 import formal.nfa
-from formal.nfa import State, Automaton
-from formal.cli import CLI, get_state_cnt, normalize_ids, write_nfa, read_nfa, draw_nfa
+from formal.nfa import State, NFA, get_state_cnt, normalize_ids
+from formal.cli import CLI, write_nfa, read_nfa, draw_nfa
 
 @pytest.fixture
 def mock_algorithms():
@@ -24,7 +24,7 @@ def nfa1():
     s1.add_transition('', s0)
     
     final_states = {s1}
-    return Automaton(s0, final_states)
+    return NFA(s0, final_states)
 
 def test_make_nfa(mock_algorithms):
     m_make, _, _ = mock_algorithms
